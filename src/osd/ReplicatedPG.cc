@@ -262,6 +262,9 @@ void ReplicatedPG::on_local_recover(
     assert(obc);
     obc->obs.exists = true;
     obc->ondisk_write_lock();
+
+    assert(obc->get_recovery_read());
+    recovering[soid] = obc;
     obc->obs.oi = recovery_info.oi;  // may have been updated above
 
 
@@ -308,12 +311,12 @@ void ReplicatedPG::on_global_recover(
   map<hobject_t, ObjectContextRef>::iterator i = recovering.find(soid);
   assert(i != recovering.end());
 
-  // recover missing won't have had an obc
-  if (i->second) {
-    list<OpRequestRef> requeue_list;
-    i->second->drop_recovery_read(&requeue_list);
-    requeue_ops(requeue_list);
-  }
+  // recover missing won't have had an obc, but it gets filled in
+  // during on_local_recover
+  assert(i->second);
+  list<OpRequestRef> requeue_list;
+  i->second->drop_recovery_read(&requeue_list);
+  requeue_ops(requeue_list);
 
   if (backfills_in_flight.count(soid))
     backfills_in_flight.erase(soid);
