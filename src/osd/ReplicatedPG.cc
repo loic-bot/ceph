@@ -264,7 +264,8 @@ void ReplicatedPG::on_local_recover(
     obc->ondisk_write_lock();
 
     assert(obc->get_recovery_read());
-    recovering[soid] = obc;
+    assert(recovering.count(obc->obs.oi.soid));
+    recovering[obc->obs.oi.soid] = obc;
     obc->obs.oi = recovery_info.oi;  // may have been updated above
 
 
