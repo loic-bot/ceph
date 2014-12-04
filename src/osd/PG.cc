@@ -2744,11 +2744,6 @@ void PG::add_log_entry(pg_log_entry_t& e, bufferlist& log_bl)
   dout(10) << "add_log_entry " << e << dendl;
 
   e.encode_with_checksum(log_bl);
-
-  // we might get log entries for missing objects since we can write to
-  // degraded objects
-  if (pg_log.get_missing().is_missing(e.soid))
-    pg_log.missing_add_event(e);
 }
 
 
@@ -2768,8 +2763,20 @@ void PG::append_log(
        p != logv.end();
        ++p) {
     p->offset = 0;
-    if (!transaction_applied && p->is_delete())
-      t.remove(coll, p->soid);
+
+    // we might get log entries for missing objects since we can write to
+    // degraded objects
+    if (!transaction_applied) {
+      if (p->is_delete())
+	t.remove(coll, p->soid);
+
+      assert(
+	pg_log.get_missing().is_missing(p->soid) ||
+	(p->is_clone() ||
+	 (p->is_modify() && (p->prior_version == eversion_t())))
+	);
+      pg_log.missing_add_event(*p);
+    }
     add_log_entry(*p, keys[p->get_key_name()]);
   }
 
