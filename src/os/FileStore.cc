@@ -4971,7 +4971,9 @@ int FileStore::_omap_setkeys(coll_t cid, const ghobject_t &hoid,
     if (r < 0)
       return r;
   }
-  return object_map->set_keys(hoid, aset, &spos);
+  r = object_map->set_keys(hoid, aset, &spos);
+  dout(20) << __func__ << " " << cid << "/" << hoid << " = " << r << dendl;
+  return r;
 }
 
 int FileStore::_omap_rmkeys(coll_t cid, const ghobject_t &hoid,
