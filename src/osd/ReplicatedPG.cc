@@ -1941,7 +1941,11 @@ struct C_ProxyRead : public Context {
       tid(0), prdop(prd)
   {}
   void finish(int r) {
+    if (prdop->canceled)
+      return;
     pg->lock();
+    if (prdop->canceled)
+      return;
     if (last_peering_reset == pg->get_last_peering_reset()) {
       pg->finish_proxy_read(oid, tid, r);
     }
@@ -2043,6 +2047,7 @@ void ReplicatedPG::kick_proxy_read_blocked(hobject_t& soid)
 void ReplicatedPG::cancel_proxy_read(ProxyReadOpRef prdop)
 {
   dout(10) << __func__ << " " << prdop->soid << dendl;
+  prdop->canceled = true;
 
   // cancel objecter op, if we can
   if (prdop->objecter_tid) {
