@@ -377,7 +377,6 @@ private:
   void op_queue_release_throttle(Op *o);
   void _journaled_ahead(OpSequencer *osr, Op *o, Context *ondisk);
   friend struct C_JournaledAhead;
-  int write_version_stamp();
 
   int open_journal();
 
@@ -410,8 +409,6 @@ public:
   int _sanity_check_fs();
   
   bool test_mount_in_use();
-  int version_stamp_is_valid(uint32_t *version);
-  int update_version_stamp();
   int read_op_seq(uint64_t *seq);
   int write_op_seq(int, uint64_t seq);
   int mount();
@@ -427,6 +424,11 @@ public:
   }
   int mkfs();
   int mkjournal();
+
+  int write_version_stamp();
+  int version_stamp_is_valid(uint32_t *version);
+  int update_version_stamp();
+  int upgrade();
 
   /**
    * set_allow_sharded_objects()
@@ -593,8 +595,6 @@ public:
   int _collection_setattrs(coll_t cid, map<string,bufferptr> &aset);
   int _collection_remove_recursive(const coll_t &cid,
 				   const SequencerPosition &spos);
-  int _collection_rename(const coll_t &cid, const coll_t &ncid,
-			 const SequencerPosition& spos);
 
   // collections
   int list_collections(vector<coll_t>& ls);
@@ -687,7 +687,7 @@ private:
   double m_filestore_max_sync_interval;
   double m_filestore_min_sync_interval;
   bool m_filestore_fail_eio;
-  bool m_filestore_replica_fadvise;
+  bool m_filestore_fadvise;
   int do_update;
   bool m_journal_dio, m_journal_aio, m_journal_force_aio;
   std::string m_osd_rollback_to_cluster_snap;
